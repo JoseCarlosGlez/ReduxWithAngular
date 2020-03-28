@@ -15,6 +15,15 @@ import { SidebarComponent } from "./shared/sidebar/sidebar.component";
 
 //Imports
 import { AppRoutingModule } from "./app-routing-module";
+import { ReactiveFormsModule } from "@angular/forms";
+import { HandleErrorsDirective } from "./directive/handle-errors.directive";
+
+import { AngularFireModule } from "@angular/fire";
+import { AngularFirestoreModule } from "@angular/fire/firestore";
+import { AngularFireAuthModule } from "@angular/fire/auth";
+
+import { environment } from "../environments/environment";
+
 
 @NgModule({
   declarations: [
@@ -27,9 +36,18 @@ import { AppRoutingModule } from "./app-routing-module";
     DetalleComponent,
     FooterComponent,
     NavbarComponent,
-    SidebarComponent
+    SidebarComponent,
+    HandleErrorsDirective
   ],
-  imports: [BrowserModule, AppRoutingModule],
+
+  imports: [
+    BrowserModule,
+    ReactiveFormsModule,
+    AppRoutingModule,
+    AngularFireModule.initializeApp(environment.firebase),
+    AngularFirestoreModule,
+    AngularFireAuthModule
+  ],
   providers: [],
   bootstrap: [AppComponent]
 })
