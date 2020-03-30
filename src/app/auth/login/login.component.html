@@ -25,12 +25,17 @@
                 formControlName="password"
               />
             </div>
+
             <div class="form-group">
               <button
                 type="submit"
                 class="btn btn-primary submit-btn btn-block"
+                [disabled]="formulario.invalid || isLoading"
               >
-                Login
+                <span *ngIf="!isLoading">Login</span>
+                <span *ngIf="isLoading"
+                  ><i class="fa fa-sync fa-spin" style="font-size: 25px;" ></i>
+                </span>
               </button>
             </div>
 

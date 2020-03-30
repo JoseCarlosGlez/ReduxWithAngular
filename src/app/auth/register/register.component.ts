@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { Component, OnInit,OnDestroy } from "@angular/core";
 import {
   FormGroup,
   FormControl,
@@ -8,22 +8,40 @@ import {
 import { AuthService } from "src/app/service/auth.service";
 import { Router } from "@angular/router";
 
+import swal from "sweetalert2";
+import { Store } from "@ngrx/store";
+import { AppState } from "src/Redux/app.reducers";
+import { Subscription } from "rxjs";
+import * as ui from "src/Redux/ui/ui.actions";
+
 @Component({
   selector: "app-register",
   templateUrl: "./register.component.html",
   styleUrls: ["./register.component.css"]
 })
-export class RegisterComponent implements OnInit {
+export class RegisterComponent implements OnInit, OnDestroy {
+  isLoading: boolean;
+  uiSubscription: Subscription;
+  public formulario: FormGroup;
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private store: Store<AppState>
   ) {}
-
-  public formulario: FormGroup;
 
   ngOnInit(): void {
     this.initForm();
+    this.uiSubscription = this.store
+      .select("ui")
+      .subscribe(({ isLoading }) => (this.isLoading = isLoading));
+  }
+
+  ngOnDestroy(): void {
+    //Called once, before the instance is destroyed.
+    //Add 'implements OnDestroy' to the class.
+    this.uiSubscription.unsubscribe();
   }
 
   public initForm() {
@@ -35,16 +53,27 @@ export class RegisterComponent implements OnInit {
   }
 
   CreateUser() {
-    if (this.formulario.invalid) return;
+    if (this.formulario.invalid) {
+      swal.fire({
+        title: "Hay campos invalidos",
+        icon: "error"
+      });
+      return;
+    }
+
+    this.store.dispatch(ui.isLoading());
 
     const { name, email, password } = this.formulario.value;
 
     this.authService
       .CreateUser(name, email, password)
       .then(credentials => {
+        this.store.dispatch(ui.stopLoading());
         this.router.navigate(["/"]);
       })
-      .catch(console.log);
+      .catch(err => {
+        this.store.dispatch(ui.stopLoading());
+      });
   }
 
   ReturnErrors(control: string): string {
