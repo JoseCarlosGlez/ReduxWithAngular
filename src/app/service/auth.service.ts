@@ -1,19 +1,18 @@
 import { Injectable } from "@angular/core";
 import { AngularFireAuth } from "@angular/fire/auth";
-import { map, pluck, switchMap } from "rxjs/operators";
+import { map, pluck, switchMap, filter, tap } from "rxjs/operators";
 import "firebase/firestore";
 import { Usuario } from "../models/usuario.model";
 import { AngularFirestore } from "@angular/fire/firestore";
 import { Store } from "@ngrx/store";
 import { AppState } from "src/Redux/app.reducers";
 import * as authActions from "src/Redux/auth/auth.actions";
-import { Subscription } from "rxjs";
+import { Subscription, empty } from "rxjs";
 
 @Injectable({
   providedIn: "root"
 })
 export class AuthService {
-  public subscription: Subscription;
   constructor(
     private FireAuth: AngularFireAuth,
     private firestore: AngularFirestore,
@@ -21,31 +20,18 @@ export class AuthService {
   ) {}
 
   initAuthListener() {
-    this.FireAuth.authState.subscribe(userFirebase => {
-      console.log(userFirebase)
-
-      if (userFirebase) {
-        // existe
-        this.subscription = this.firestore
-          .doc(`${userFirebase.uid}/usuario`)
-          .valueChanges()
-          .subscribe((firestoreUser: any) => {
-
-            const user = Usuario.FromFirebase(firestoreUser);
-            this.store.dispatch(authActions.setUser({ user }));
-          });
-      } else {
-    
-        this.subscription?.unsubscribe();
-        this.store.dispatch(authActions.unSetUser());
-      }
-    });
-
-
-
-
-
-
+    this.FireAuth.authState
+      .pipe(
+        tap(() => this.store.dispatch(authActions.unSetUser())),
+        filter(fbUser => fbUser != null),
+        switchMap(({ uid }) =>
+          this.firestore.doc(`${uid}/usuario`).valueChanges()
+        )
+      )
+      .subscribe((userFirebase: Usuario) => {
+        const user = Usuario.FromFirebase(userFirebase);
+        this.store.dispatch(authActions.setUser({ user }));
+      });
   }
 
   CreateUser(nombre: string, email: string, password: string) {
